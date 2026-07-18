@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Result — {{ quiz.title }} — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Score hero -->
+  <div class="result-hero fade-in">
+
+    {% if score >= 80 %}
+      <div style="font-size:3rem; margin-bottom:8px;">🎉</div>
+      <div class="grade-badge grade-a">Excellent — Grade A</div>
+    {% elif score >= 60 %}
+      <div style="font-size:3rem; margin-bottom:8px;">👍</div>
+      <div class="grade-badge grade-b">Good Job — Grade B</div>
+    {% elif score >= 40 %}
+      <div style="font-size:3rem; margin-bottom:8px;">😐</div>
+      <div class="grade-badge grade-c">Keep Trying — Grade C</div>
+    {% else %}
+      <div style="font-size:3rem; margin-bottom:8px;">📖</div>
+      <div class="grade-badge grade-d">Needs Work — Grade D</div>
+    {% endif %}
+
+    <!-- Animated score ring -->
+    <div class="score-ring">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <defs>
+          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#6c63ff"/>
+            <stop offset="100%" stop-color="#00d4aa"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="80" cy="80" r="64"/>
+        <circle class="fill"  cx="80" cy="80" r="64" data-score="{{ score }}"/>
+      </svg>
+      <div class="score-center">
+        <span class="score-value">{{ score }}%</span>
+        <span class="score-label">Score</span>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="result-stats">
+      <div class="result-stat-item">
+        <div class="stat-val color-accent">{{ total }}</div>
+        <div class="stat-lbl">Total Questions</div>
+      </div>
+      <div class="result-stat-item">
+        <div class="stat-val color-success">{{ correct }}</div>
+        <div class="stat-lbl">Correct</div>
+      </div>
+      <div class="result-stat-item">
+        <div class="stat-val color-danger">{{ total - correct }}</div>
+        <div class="stat-lbl">Incorrect</div>
+      </div>
+      {% if result.time_taken %}
+      <div class="result-stat-item">
+        <div class="stat-val" style="color:var(--warning);">{{ result.time_taken // 60 }}m {{ result.time_taken % 60 }}s</div>
+        <div class="stat-lbl">Time Taken</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:48px;" class="no-print">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" id="back-dashboard-btn">🏠 Dashboard</a>
+      <a href="{{ url_for('quiz', quiz_id=quiz.id) }}" class="btn btn-primary" id="retake-quiz-btn">🔄 Retake Quiz</a>
+      <button onclick="window.print()" class="btn btn-outline" id="print-pdf-btn">📥 Download PDF</button>
+      <a href="{{ url_for('history') }}" class="btn btn-outline" id="view-history-btn">📜 History</a>
+    </div>
+  </div>
+
+  {% if answers.get('_diagnostics') %}
+  {% set diag = answers.get('_diagnostics') %}
+  <details class="card fade-in mb-3 no-print" style="border-left: 4px solid var(--accent-light); padding: 18px; margin-bottom: 24px; animation-delay:0.2s;">
+    <summary style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:600; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; user-select:none;">
+      <span style="display:flex; align-items:center; gap:8px;">📊 RAG Diagnostics Dashboard</span>
+      <span style="font-size:0.8rem; color:var(--text-muted);">Click to expand/collapse</span>
+    </summary>
+    <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Detected Subject</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--accent-light);">{{ diag.get('subject', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Detected Topic</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--accent2-light);">{{ diag.get('topic', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Reranker Confidence</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('confidence_score', 0) >= 0.8 %}var(--success){% else %}var(--warning){% endif %};">{{ diag.get('confidence_score', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Avg Similarity / Precision</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text);">{{ diag.get('avg_similarity', 'N/A') }} ({{ diag.get('retrieval_precision', 'N/A') }})</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Generation / Total Time</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--warning);">{{ diag.get('generation_time', 'N/A') }}s / {{ diag.get('total_time', 'N/A') }}s</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Hallucination Risk</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('hallucination_risk') == 'Low' %}var(--success){% else %}var(--warning){% endif %};">{{ diag.get('hallucination_risk', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Embedding Cache Hit</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('cache_hits') == 'Yes' %}var(--success){% else %}var(--text-muted){% endif %};">{{ diag.get('cache_hits', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">JSON Validation</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('json_validation') == 'Success' %}var(--success){% else %}var(--warning){% endif %};">{{ diag.get('json_validation', 'N/A') }}</div>
+      </div>
+      <div style="grid-column: span 2;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Retrieval Path</div>
+        <div style="font-weight: 600; font-size: 0.85rem; color: var(--accent2-light); line-height: 1.3;">{{ diag.get('stages_executed', 'N/A') }}</div>
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  <!-- Answer review section -->
+  <div class="card fade-in" style="animation-delay:0.3s;">
+    <h2 style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; margin-bottom:24px;">📝 Answer Review</h2>
+
+    {% for qid, data in answers.items() %}
+    <div class="review-item {% if data.is_correct %}correct{% else %}incorrect{% endif %}">
+      <div class="review-question">
+        {% if data.is_correct %}✅{% else %}❌{% endif %}
+        &nbsp;<strong>Q{{ loop.index }}.</strong> {{ data.question }}
+      </div>
+      <div class="review-answer">
+        {% if data.is_correct %}
+          <span style="color:var(--success);">Your answer: <span>{{ data.selected if data.selected else '(not answered)' }}</span> ✓</span>
+        {% else %}
+          <span style="color:var(--danger);">Your answer: <span>{{ data.selected if data.selected else '(not answered)' }}</span></span>
+          &nbsp;|&nbsp;
+          <span style="color:var(--success);">Correct: <span>{{ data.correct }}</span></span>
+        {% endif %}
+      </div>
+      {% if data.explanation %}
+      <div class="review-explanation" style="margin-top: 10px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-left: 3px solid var(--accent-light); font-size: 0.85rem; color: var(--text-secondary); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;">
+        💡 <strong>Explanation:</strong> {{ data.explanation }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

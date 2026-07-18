@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Register — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card fade-in">
+
+    <div class="auth-logo">
+      <div class="logo-icon">🚀</div>
+      <h1>Create Account</h1>
+      <p>Join thousands of learners on QuizMaster</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('register') }}" id="register-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          class="form-control"
+          placeholder="Choose a username (min 3 chars)"
+          value="{{ username|default('') }}"
+          autocomplete="username"
+          required
+          minlength="3"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="form-control"
+          placeholder="your@email.com"
+          value="{{ email|default('') }}"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-control"
+          placeholder="At least 6 characters"
+          autocomplete="new-password"
+          required
+          minlength="6"
+        >
+        <p class="form-hint">Use a mix of letters and numbers for a stronger password.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm_password">Confirm Password</label>
+        <input
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          class="form-control"
+          placeholder="Repeat your password"
+          autocomplete="new-password"
+          required
+        >
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="register-btn">
+        🚀 Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer" style="margin-top:20px">
+      Already have an account?
+      <a href="{{ url_for('login') }}">Sign in →</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('register-form').addEventListener('submit', function(e) {
+  const pw = document.getElementById('password').value;
+  const cp = document.getElementById('confirm_password').value;
+  if (pw !== cp) {
+    e.preventDefault();
+    alert('Passwords do not match!');
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Quiz History — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="page-header fade-in">
+    <h1>📜 Quiz History</h1>
+    <p>All your past attempts and scores in one place</p>
+  </div>
+
+  {% if results %}
+
+  <!-- Summary strip -->
+  <div class="stats-grid mb-3 fade-in">
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-number">{{ results|length }}</div>
+      <div class="stat-label">Total Attempts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📈</div>
+      <div class="stat-number">
+        {{ (results|map(attribute='score')|sum / results|length)|round(1) }}%
+      </div>
+      <div class="stat-label">Average Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏅</div>
+      <div class="stat-number">{{ results|map(attribute='score')|max|round(1) }}%</div>
+      <div class="stat-label">Best Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-number">{{ results|selectattr('score','ge', 80)|list|length }}</div>
+      <div class="stat-label">Passed (≥80%)</div>
+    </div>
+  </div>
+
+  <!-- History table -->
+  <div class="table-wrapper fade-in" style="animation-delay:0.15s;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Quiz</th>
+          <th>Score</th>
+          <th>Correct / Total</th>
+          <th>Time</th>
+          <th>Attempted On</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for result in results %}
+        <tr class="leaderboard-row">
+          <td style="color:var(--text-muted);">{{ loop.index }}</td>
+          <td><strong>{{ result.quiz.title }}</strong></td>
+          <td>
+            <span class="score-pill {% if result.score >= 80 %}high{% elif result.score >= 50 %}medium{% else %}low{% endif %}">
+              {{ result.score }}%
+            </span>
+          </td>
+          <td>
+            <span style="color:var(--success);">{{ result.correct_answers }}</span>
+            <span style="color:var(--text-muted);"> / {{ result.total_questions }}</span>
+          </td>
+          <td style="color:var(--text-muted);">
+            {% if result.time_taken %}
+              {{ result.time_taken // 60 }}m {{ result.time_taken % 60 }}s
+            {% else %}—{% endif %}
+          </td>
+          <td style="color:var(--text-muted);">{{ result.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+          <td>
+            <a href="{{ url_for('result_detail', result_id=result.id) }}"
+               class="btn btn-outline btn-sm" id="view-result-{{ result.id }}">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="empty-state fade-in">
+    <div class="empty-icon">📭</div>
+    <h3>No quiz history yet</h3>
+    <p>Head to the dashboard and attempt your first quiz!</p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3" id="go-dashboard-btn">🏠 Go to Dashboard</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

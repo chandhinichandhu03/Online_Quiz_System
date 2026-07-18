@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Result Detail — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:12px;" class="fade-in no-print">
+    <div>
+      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:700;">📋 Detailed Result</h1>
+      <p style="color:var(--text-muted); margin-top:6px;">{{ quiz.title }} — {{ result.timestamp.strftime('%d %B %Y, %H:%M') }}</p>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <button onclick="window.print()" class="btn btn-outline">📥 Download PDF</button>
+      <a href="{{ url_for('history') }}" class="btn btn-secondary" id="back-history-btn">← Back to History</a>
+    </div>
+  </div>
+
+  <!-- Score summary -->
+  <div class="card fade-in" style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:24px; margin-bottom:28px; padding:32px; text-align:center;">
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:3rem; font-weight:700; color:{% if result.score >= 80 %}var(--success){% elif result.score >= 50 %}var(--warning){% else %}var(--danger){% endif %};">
+        {{ result.score }}%
+      </div>
+      <div style="color:var(--text-muted); font-size:0.85rem;">Final Score</div>
+    </div>
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; color:var(--success);">{{ result.correct_answers }}</div>
+      <div style="color:var(--text-muted); font-size:0.85rem;">Correct</div>
+    </div>
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; color:var(--danger);">{{ result.total_questions - result.correct_answers }}</div>
+      <div style="color:var(--text-muted); font-size:0.85rem;">Incorrect</div>
+    </div>
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; color:var(--accent-light);">{{ result.total_questions }}</div>
+      <div style="color:var(--text-muted); font-size:0.85rem;">Total</div>
+    </div>
+    {% if result.time_taken %}
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:var(--warning);">{{ result.time_taken // 60 }}m {{ result.time_taken % 60 }}s</div>
+      <div style="color:var(--text-muted); font-size:0.85rem;">Time Taken</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if answers.get('_diagnostics') %}
+  {% set diag = answers.get('_diagnostics') %}
+  <details class="card fade-in mb-3 no-print" style="border-left: 4px solid var(--accent-light); padding: 18px; margin-bottom: 24px; animation-delay:0.1s;">
+    <summary style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:600; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; user-select:none;">
+      <span style="display:flex; align-items:center; gap:8px;">📊 RAG Diagnostics Dashboard</span>
+      <span style="font-size:0.8rem; color:var(--text-muted);">Click to expand/collapse</span>
+    </summary>
+    <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Detected Subject</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--accent-light);">{{ diag.get('subject', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Detected Topic</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--accent2-light);">{{ diag.get('topic', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Reranker Confidence</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('confidence_score', 0) >= 0.8 %}var(--success){% else %}var(--warning){% endif %};">{{ diag.get('confidence_score', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Avg Similarity / Precision</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text);">{{ diag.get('avg_similarity', 'N/A') }} ({{ diag.get('retrieval_precision', 'N/A') }})</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Generation / Total Time</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: var(--warning);">{{ diag.get('generation_time', 'N/A') }}s / {{ diag.get('total_time', 'N/A') }}s</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Hallucination Risk</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('hallucination_risk') == 'Low' %}var(--success){% else %}var(--warning){% endif %};">{{ diag.get('hallucination_risk', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Embedding Cache Hit</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('cache_hits') == 'Yes' %}var(--success){% else %}var(--text-muted){% endif %};">{{ diag.get('cache_hits', 'N/A') }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">JSON Validation</div>
+        <div style="font-weight: 600; font-size: 0.95rem; color: {% if diag.get('json_validation') == 'Success' %}var(--success){% else %}var(--warning){% endif %};">{{ diag.get('json_validation', 'N/A') }}</div>
+      </div>
+      <div style="grid-column: span 2;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Retrieval Path</div>
+        <div style="font-weight: 600; font-size: 0.85rem; color: var(--accent2-light); line-height: 1.3;">{{ diag.get('stages_executed', 'N/A') }}</div>
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  <!-- Detailed answers -->
+  <div class="card fade-in" style="animation-delay:0.2s;">
+    <h2 style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; margin-bottom:24px;">📝 Full Answer Review</h2>
+
+    {% for qid, data in answers.items() %}
+    <div class="review-item {% if data.is_correct %}correct{% else %}incorrect{% endif %}" style="margin-bottom:16px;">
+      <div class="review-question" style="margin-bottom:12px;">
+        {% if data.is_correct %}✅{% else %}❌{% endif %}
+        &nbsp;<strong>Q{{ loop.index }}.</strong> {{ data.question }}
+      </div>
+
+      <!-- All options displayed -->
+      <div style="display:grid; gap:8px;">
+        {% for opt in data.options %}
+        {% if opt == data.correct %}
+        <div style="padding:8px 14px; border-radius:8px; font-size:0.85rem; background:rgba(46,213,115,0.12); border:1px solid rgba(46,213,115,0.3); color:var(--success);">
+        {% elif opt == data.selected and not data.is_correct %}
+        <div style="padding:8px 14px; border-radius:8px; font-size:0.85rem; background:rgba(255,78,106,0.10); border:1px solid rgba(255,78,106,0.3); color:var(--danger);">
+        {% else %}
+        <div style="padding:8px 14px; border-radius:8px; font-size:0.85rem; background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--text-muted);">
+        {% endif %}
+          {% if opt == data.correct %}<strong>✓ Correct: </strong>{% elif opt == data.selected and not data.is_correct %}<strong>✗ Your answer: </strong>{% endif %}
+          {{ opt }}
+        </div>
+        {% endfor %}
+      </div>
+      {% if data.explanation %}
+      <div class="review-explanation" style="margin-top: 12px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-left: 3px solid var(--accent-light); font-size: 0.85rem; color: var(--text-secondary); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;">
+        💡 <strong>Explanation:</strong> {{ data.explanation }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="display:flex; gap:12px; margin-top:24px; flex-wrap:wrap;" class="fade-in no-print">
+    <a href="{{ url_for('quiz', quiz_id=quiz.id) }}" class="btn btn-primary" id="retake-btn">🔄 Retake Quiz</a>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" id="dashboard-btn">🏠 Dashboard</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+  .no-print, .navbar, footer { display: none !important; }
+  body { background: #fff; color: #000; }
+  .card, .review-item { border: 1px solid #ccc; background: #fff !important; color: #000 !important; }
+  .score-value, .stat-val { color: #000 !important; }
+  * { box-shadow: none !important; text-shadow: none !important; }
+}
+</style>
+{% endblock %}

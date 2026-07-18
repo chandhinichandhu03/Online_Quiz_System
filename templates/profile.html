@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header fade-in">
+    <h1>👤 My Profile</h1>
+    <p>Manage your account and track your progress</p>
+  </div>
+
+  <!-- Stats cards -->
+  <div class="stats-grid fade-in">
+    <div class="stat-card">
+      <div class="stat-icon">📝</div>
+      <div class="stat-number">{{ stats.total_quizzes }}</div>
+      <div class="stat-label">Quizzes Taken</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-number">{{ stats.avg_score }}%</div>
+      <div class="stat-label">Average Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-number">
+        {% if user.results %}
+          {{ user.results|map(attribute='score')|max|round(1) }}%
+        {% else %}—{% endif %}
+      </div>
+      <div class="stat-label">Best Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-number" style="font-size:1rem; padding-top:6px;">{{ user.created_at.strftime('%b %Y') }}</div>
+      <div class="stat-label">Member Since</div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:8px;" class="profile-grid">
+
+    <!-- Edit profile -->
+    <div class="card fade-in" style="animation-delay:0.1s;">
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; margin-bottom:24px;">✏️ Edit Profile</h2>
+      <form method="POST" action="{{ url_for('profile') }}" id="profile-form">
+
+        <div class="form-group">
+          <label class="form-label" for="prof-username">Username</label>
+          <input type="text" id="prof-username" name="username" class="form-control"
+                 value="{{ user.username }}" required minlength="3">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-email">Email</label>
+          <input type="email" id="prof-email" name="email" class="form-control"
+                 value="{{ user.email }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-new-pw">New Password <span class="form-hint" style="display:inline;">(leave blank to keep current)</span></label>
+          <input type="password" id="prof-new-pw" name="new_password" class="form-control"
+                 placeholder="New password (optional)" minlength="6">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-curr-pw">Current Password <span style="color:var(--danger)">*</span></label>
+          <input type="password" id="prof-curr-pw" name="current_password" class="form-control"
+                 placeholder="Required to save changes" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="save-profile-btn">💾 Save Changes</button>
+      </form>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="card fade-in" style="animation-delay:0.2s;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <h2 style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem;">🕒 Recent Activity</h2>
+        <a href="{{ url_for('history') }}" class="btn btn-outline btn-sm">See All →</a>
+      </div>
+
+      {% if recent_results %}
+        {% for result in recent_results %}
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:500; font-size:0.93rem;">{{ result.quiz.title }}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:3px;">
+              {{ result.timestamp.strftime('%d %b %Y, %H:%M') }}
+            </div>
+          </div>
+          <span class="score-pill {% if result.score >= 80 %}high{% elif result.score >= 50 %}medium{% else %}low{% endif %}">
+            {{ result.score }}%
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:40px 0;">
+          <div class="empty-icon">📭</div>
+          <p>No quizzes taken yet. <a href="{{ url_for('dashboard') }}">Start one!</a></p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{% block extra_css %}
+<style>
+@media (max-width: 768px) {
+  .profile-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+{% endblock %}
+{% endblock %}

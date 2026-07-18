@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Leaderboard — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="page-header fade-in">
+    <h1>🏆 Leaderboard</h1>
+    <p>Top performers ranked by average score across all quizzes</p>
+  </div>
+
+  {% if leaders %}
+  <div class="table-wrapper fade-in">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>Quizzes Taken</th>
+          <th>Best Score</th>
+          <th>Avg Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leader in leaders %}
+        <tr class="leaderboard-row {% if leader.username == session.username %}current-user{% endif %}"
+            style="{% if leader.username == session.username %}background:rgba(108,99,255,0.07);{% endif %}">
+          <td>
+            <span class="rank-badge {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% else %}rank-other{% endif %}">
+              {% if loop.index <= 3 %}
+                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else %}🥉{% endif %}
+              {% else %}
+                {{ loop.index }}
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            <strong>{{ leader.username }}</strong>
+            {% if leader.username == session.username %}
+              <span style="font-size:0.75rem; color:var(--accent-light); margin-left:6px;">(You)</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--text-muted);">{{ leader.total }}</td>
+          <td>
+            <span class="score-pill {% if leader.best_score >= 80 %}high{% elif leader.best_score >= 50 %}medium{% else %}low{% endif %}">
+              {{ leader.best_score|round(1) }}%
+            </span>
+          </td>
+          <td>
+            <span class="score-pill {% if leader.avg_score >= 80 %}high{% elif leader.avg_score >= 50 %}medium{% else %}low{% endif %}">
+              {{ leader.avg_score|round(1) }}%
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="empty-state fade-in">
+    <div class="empty-icon">🏆</div>
+    <h3>No rankings yet</h3>
+    <p>Be the first to complete a quiz and claim the top spot!</p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">Start a Quiz</a>
+  </div>
+  {% endif %}
+
+  <div style="text-align:center; margin-top:32px;" class="fade-in">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" id="back-from-leaderboard">🏠 Back to Dashboard</a>
+  </div>
+
+</div>
+{% endblock %}

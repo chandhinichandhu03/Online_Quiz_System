@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Create Quiz — Admin — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:700px;">
+
+  <div class="page-header fade-in" style="margin-bottom:32px;">
+    <h1>➕ Create New Quiz</h1>
+    <p>Set up the details, then you can add questions on the next screen.</p>
+  </div>
+
+  <div class="card fade-in">
+    <form method="POST" action="{{ url_for('create_quiz') }}">
+
+      <div class="form-group">
+        <label class="form-label" for="quiz-title">Quiz Title <span class="text-danger">*</span></label>
+        <input type="text" id="quiz-title" name="title" class="form-control"
+               placeholder="e.g. Advanced Python Concepts" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="quiz-desc">Description <span class="text-danger">*</span></label>
+        <textarea id="quiz-desc" name="description" class="form-control" rows="3"
+                  placeholder="A brief overview of what this quiz covers..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="quiz-time">Time Limit (Seconds)</label>
+        <input type="number" id="quiz-time" name="time_limit" class="form-control"
+               value="0" min="0">
+        <div class="form-hint">Set to 0 for unlimited time. (e.g. 300 = 5 minutes)</div>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:32px;">
+        <button type="submit" class="btn btn-primary btn-full" id="save-quiz-btn">Save & Add Questions →</button>
+        <a href="{{ url_for('admin') }}" class="btn btn-secondary" style="white-space:nowrap;">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}

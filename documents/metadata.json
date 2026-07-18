@@ -1,0 +1,10 @@
+{
+  "software_architecture.txt": {
+    "subject": "Software Engineering",
+    "topic": "Software Design Patterns",
+    "chapter": "Chapter 1",
+    "keywords": "microservices, mvc, singleton, observer, design patterns",
+    "difficulty": "Medium",
+    "uploaded_at": "2026-07-18 15:09:56"
+  }
+}

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}{{ quiz.title }} — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Quiz header bar -->
+  <div class="quiz-header-bar fade-in">
+    <div class="quiz-title-area">
+      <h2>{{ quiz.title }}</h2>
+      <p>{{ quiz.questions|length }} questions &nbsp;·&nbsp; Answer all before submitting</p>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <!-- Progress indicator -->
+      <div style="font-size:0.85rem; color:var(--text-muted);">
+        <span id="answered-count">0</span>/{{ quiz.questions|length }} answered
+      </div>
+
+      {% if quiz.time_limit > 0 %}
+      <div class="timer-widget" id="timer-widget">
+        <span class="timer-label">⏱ TIME LEFT</span>
+        <span id="timer-display">--:--</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="quiz-progress-bar">
+    <div class="quiz-progress-fill" style="width:0%"></div>
+  </div>
+
+  <!-- Quiz form -->
+  <form method="POST" action="{{ url_for('submit') }}" id="quiz-form" data-total="{{ quiz.questions|length }}">
+    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+    <input type="hidden" name="time_taken" id="time-taken-input" value="0">
+
+    {% for question in quiz.questions %}
+    <div class="question-card fade-in" id="q-{{ question.id }}" style="animation-delay: calc({{ loop.index0 }} * 0.06s);"
+         data-opt-1="{{ question.option1 }}"
+         data-opt-2="{{ question.option2 }}"
+         data-opt-3="{{ question.option3 }}"
+         data-opt-4="{{ question.option4 }}"
+         data-correct="{{ question.correct_answer }}">
+      <div class="question-number">Question {{ loop.index }} of {{ quiz.questions|length }}</div>
+      <div class="question-text">{{ question.question_text }}</div>
+
+      <div class="options-grid">
+        {% set options = [question.option1, question.option2, question.option3, question.option4] %}
+        {% set labels  = ['A', 'B', 'C', 'D'] %}
+        {% for opt in options %}
+        <label class="option-label" for="q{{ question.id }}_opt{{ loop.index }}">
+          <input
+            type="radio"
+            id="q{{ question.id }}_opt{{ loop.index }}"
+            name="answer_{{ question.id }}"
+            value="{{ opt }}"
+          >
+          <span class="option-marker">{{ labels[loop.index0] }}</span>
+          <span>{{ opt }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Submit section -->
+    <div class="card text-center mt-4" style="padding:32px;">
+      <h3 style="font-family:'Space Grotesk',sans-serif; margin-bottom:8px;">Ready to submit?</h3>
+      <p style="color:var(--text-muted); margin-bottom:24px; font-size:0.9rem;">
+        Make sure you've answered all questions. You can scroll up to review.
+      </p>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" id="cancel-quiz-btn">← Back to Dashboard</a>
+        <button type="submit" class="btn btn-success btn-lg" id="submit-quiz-btn">
+          🏁 Submit Quiz
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if quiz.time_limit > 0 %}
+startQuizTimer(parseInt("{{ quiz.time_limit }}", 10), 'time-taken-input');
+{% else %}
+// Track elapsed time even for unlimited quizzes
+let elapsed = 0;
+setInterval(function() {
+  elapsed++;
+  const inp = document.getElementById('time-taken-input');
+  if (inp) inp.value = elapsed;
+}, 1000);
+{% endif %}
+
+// Confirm before submit
+document.getElementById('quiz-form').addEventListener('submit', function(e) {
+  const total = parseInt(this.dataset.total);
+  const answered = new Set();
+  this.querySelectorAll('input[type="radio"]:checked').forEach(r => answered.add(r.name));
+  if (answered.size < total) {
+    const unanswered = total - answered.size;
+    if (!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) {
+      e.preventDefault();
+    }
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}RAG Diagnostics Dashboard — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header fade-in">
+    <h1 style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem;">📊 RAG Diagnostics Dashboard</h1>
+    <p style="color:var(--text-muted); margin-top:4px;">Real-time index status, system health, and vector retrieval statistics.</p>
+  </div>
+
+  <div style="display: flex; gap: 24px; flex-wrap: wrap;" class="fade-in">
+    
+    <!-- System Status Cards -->
+    <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 16px;">
+      
+      <div class="card" style="margin-bottom:0;">
+        <h3 style="font-family:'Space Grotesk',sans-serif; font-size:1.15rem; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+          🛠️ System Health
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size:0.9rem;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <span style="color: var(--text-secondary);">FAISS Index Status</span>
+            <span class="badge" style="background: {% if report.faiss_status == 'Online / Loaded' %}rgba(46, 213, 115, 0.15){% else %}rgba(255, 71, 87, 0.15){% endif %}; color: {% if report.faiss_status == 'Online / Loaded' %}var(--success){% else %}var(--danger){% endif %}; font-weight:600; font-size: 0.8rem; padding: 2px 8px; border-radius: 4px;">
+              {{ report.faiss_status }}
+            </span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <span style="color: var(--text-secondary);">Retriever Status</span>
+            <span class="badge" style="background: {% if report.retriever_status == 'Ready' %}rgba(46, 213, 115, 0.15){% else %}rgba(255, 71, 87, 0.15){% endif %}; color: {% if report.retriever_status == 'Ready' %}var(--success){% else %}var(--danger){% endif %}; font-weight:600; font-size: 0.8rem; padding: 2px 8px; border-radius: 4px;">
+              {{ report.retriever_status }}
+            </span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <span style="color: var(--text-secondary);">Last Indexed Time</span>
+            <span style="font-weight: 500; font-family: monospace;">{{ report.last_index_time }}</span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">Corrupted Chunks</span>
+            <span style="font-weight: 600; color: {% if report.corrupted_chunks_count > 0 %}var(--danger){% else %}var(--success){% endif %};">{{ report.corrupted_chunks_count }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;">
+        <h3 style="font-family:'Space Grotesk',sans-serif; font-size:1.15rem; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+          🧬 Vector Configuration
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size:0.9rem;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <span style="color: var(--text-secondary);">Embedding Model</span>
+            <span style="font-weight: 500; font-family: monospace; color: var(--accent-light);">{{ report.embedding_model }}</span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <span style="color: var(--text-secondary);">Vector Dimensions</span>
+            <span style="font-weight: 600; font-family: monospace;">{{ report.embedding_dimension }}</span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <span style="color: var(--text-secondary);">Total Chunks Indexed</span>
+            <span style="font-weight: 600; color: var(--accent2-light);">{{ report.chunks_indexed_count }}</span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">Total Files in DB Metadata</span>
+            <span style="font-weight: 600;">{{ report.metadata_count }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Document Tracking List -->
+    <div class="card" style="flex: 2; min-width: 360px; margin-bottom: 0;">
+      <h3 style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; margin-bottom:16px;">📄 Documents Status</h3>
+      
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--success); margin-bottom: 8px;">Successfully Indexed ({{ report.documents_indexed_count }})</h4>
+          {% if report.documents_indexed %}
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0;">
+              {% for doc in report.documents_indexed %}
+                <li style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                  <span>📄 {{ doc }}</span>
+                  <span style="color: var(--success); font-size: 0.75rem; font-weight: 600;">✓ Active</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No files currently indexed.</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--danger); margin-bottom: 8px;">Missing / Failed Index ({{ report.missing_documents|length }})</h4>
+          {% if report.missing_documents %}
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0;">
+              {% for doc in report.missing_documents %}
+                <li style="background: rgba(255, 71, 87, 0.03); border: 1px solid rgba(255, 71, 87, 0.15); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                  <span>⚠️ {{ doc }}</span>
+                  <span style="color: var(--danger); font-size: 0.75rem; font-weight: 600;">× Rebuild Required</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No missing documents detected.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-4" style="text-align: center; display: flex; gap: 12px; justify-content: center;">
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">🏠 Back to Admin Panel</a>
+  </div>
+
+</div>
+{% endblock %}

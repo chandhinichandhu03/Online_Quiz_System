@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Manage Questions — {{ quiz.title }} — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="admin-header fade-in">
+    <div>
+      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:1.6rem;">📝 Manage Questions</h1>
+      <p style="color:var(--text-muted); margin-top:4px;">Quiz: <strong style="color:var(--text-primary)">{{ quiz.title }}</strong></p>
+    </div>
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">← Back to Admin</a>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr; gap:32px; max-width:900px; margin:0 auto;" class="admin-q-grid">
+
+    <!-- Existing Questions -->
+    <div>
+      <h3 style="font-family:'Space Grotesk',sans-serif; margin-bottom:16px;">Current Questions ({{ quiz.questions|length }})</h3>
+
+      {% if quiz.questions %}
+        {% for q in quiz.questions %}
+        <div class="card mb-3 fade-in" style="padding:20px; animation-delay:{{ loop.index0 * 0.05 }}s">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+            <div style="font-weight:600;">Q{{ loop.index }}. {{ q.question_text }}</div>
+            <form method="POST" action="{{ url_for('delete_question', q_id=q.id) }}">
+              <button type="submit" class="btn btn-danger btn-sm confirm-delete" style="padding:4px 8px;">✕</button>
+            </form>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem; color:var(--text-secondary);">
+            <div style="{% if q.option1 == q.correct_answer %}color:var(--success);font-weight:bold;{% endif %}">A) {{ q.option1 }}</div>
+            <div style="{% if q.option2 == q.correct_answer %}color:var(--success);font-weight:bold;{% endif %}">B) {{ q.option2 }}</div>
+            <div style="{% if q.option3 == q.correct_answer %}color:var(--success);font-weight:bold;{% endif %}">C) {{ q.option3 }}</div>
+            <div style="{% if q.option4 == q.correct_answer %}color:var(--success);font-weight:bold;{% endif %}">D) {{ q.option4 }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state card fade-in" style="padding:40px 20px;">
+          <p>No questions added yet. Use the form below to add one.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Add Question Form -->
+    <div class="card fade-in" style="border-color:var(--accent-glow);">
+      <h3 style="font-family:'Space Grotesk',sans-serif; margin-bottom:20px; color:var(--accent-light);">➕ Add New Question</h3>
+      <form method="POST" action="{{ url_for('admin_questions', quiz_id=quiz.id) }}" id="add-q-form">
+
+        <div class="form-group">
+          <label class="form-label" for="question_text">Question Text <span class="text-danger">*</span></label>
+          <textarea id="question_text" name="question_text" class="form-control" rows="2" required></textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label" for="opt1">Option 1 <span class="text-danger">*</span></label>
+            <input type="text" id="opt1" name="option1" class="form-control q-opt-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="opt2">Option 2 <span class="text-danger">*</span></label>
+            <input type="text" id="opt2" name="option2" class="form-control q-opt-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="opt3">Option 3 <span class="text-danger">*</span></label>
+            <input type="text" id="opt3" name="option3" class="form-control q-opt-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="opt4">Option 4 <span class="text-danger">*</span></label>
+            <input type="text" id="opt4" name="option4" class="form-control q-opt-input" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label" for="correct_answer">Select Correct Answer <span class="text-danger">*</span></label>
+          <select id="correct_answer" name="correct_answer" class="form-control" style="appearance:none; cursor:pointer;" required>
+            <option value="">-- Choose correct option --</option>
+          </select>
+          <div class="form-hint">Fill out options first, then select the correct one here.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:16px;" id="add-q-btn">Add Question</button>
+      </form>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-populate correct answer dropdown
+document.addEventListener('DOMContentLoaded', function() {
+  const inputs = document.querySelectorAll('.q-opt-input');
+  const select = document.getElementById('correct_answer');
+
+  function updateSelect() {
+    // Save current selection value
+    const currentVal = select.value;
+
+    // Reset options (keep first empty one)
+    select.innerHTML = '<option value="">-- Choose correct option --</option>';
+
+    inputs.forEach(input => {
+      const val = input.value.trim();
+      if (val) {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        // Restore if it matches
+        if (currentVal === val) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      }
+    });
+
+    // Make dropdown more visible if options exist
+    if (select.options.length > 1) {
+      select.style.borderColor = 'var(--accent)';
+    } else {
+      select.style.borderColor = '';
+    }
+  }
+
+  inputs.forEach(input => {
+    input.addEventListener('input', updateSelect);
+  });
+});
+</script>
+{% endblock %}

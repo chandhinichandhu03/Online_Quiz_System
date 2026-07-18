@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — QuizMaster{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Page header -->
+  <div class="page-header fade-in">
+    <h1>Quiz Dashboard</h1>
+    <p>Welcome back, <strong style="color:var(--accent-light)">{{ session.username }}</strong>! Pick a quiz and challenge yourself.</p>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-grid mb-3">
+    <div class="stat-card">
+      <div class="stat-icon">📚</div>
+      <div class="stat-number">{{ quizzes|length }}</div>
+      <div class="stat-label">Available Quizzes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-number">{{ attempted_ids|length }}</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-number">{{ quizzes|length - attempted_ids|length }}</div>
+      <div class="stat-label">Remaining</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-number">
+        <a href="{{ url_for('leaderboard') }}" style="color:var(--accent-light);font-size:1.1rem">View →</a>
+      </div>
+      <div class="stat-label">Leaderboard</div>
+    </div>
+  </div>
+
+  <!-- Custom Quiz Generator -->
+  <div class="card fade-in mb-3" style="animation-delay:0.05s;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; margin-bottom:0;">✨ Offline RAG + Ollama Quiz Generator</h2>
+      <a href="{{ url_for('knowledge_base') }}" class="btn btn-secondary btn-sm" style="padding: 6px 12px; font-size:0.8rem;">📚 Manage Knowledge Base</a>
+    </div>
+    
+    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+      Generate quizzes 100% locally and offline. This system automatically loads and splits your study documents (PDF, DOCX, TXT) from the local knowledge base, searches the vector index (FAISS), and constructs questions using your local Ollama models.
+    </p>
+
+    <!-- Ollama Status Panel (Always Visible) -->
+    <div class="ollama-config-panel mb-3">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div class="ollama-status-indicator">
+          <span class="status-dot offline" id="ollama-dot"></span>
+          <span class="status-text" id="ollama-status-text">Checking local Ollama status...</span>
+        </div>
+        <span class="badge" id="detected-model-badge" style="background:rgba(108,99,255,0.15); color:var(--accent-light); font-size:0.75rem; padding:4px 8px; border-radius:4px; display:none; font-family:monospace;"></span>
+      </div>
+      
+      <div class="ollama-instructions mt-3" id="ollama-help" style="display: none;">
+        <p>💡 <strong>Local Offline Setup Required:</strong></p>
+        <ol style="margin-left: 18px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+          <li>Download & install Ollama from <a href="https://ollama.com" target="_blank" style="color: var(--accent2-light); text-decoration: underline;">ollama.com</a>.</li>
+          <li>Start the service by running: <code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">ollama serve</code></li>
+          <li>Pull a model from your terminal: <code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">ollama pull llama3.2</code> (or <code>mistral</code>)</li>
+          <li>Refresh this page to initialize local quiz generation.</li>
+        </ol>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('generate_quiz') }}" class="quiz-generator-form">
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0; flex:2; min-width:240px;">
+          <label class="form-label" for="topic">Search Topic / Keywords</label>
+          <input type="text" id="topic" name="topic" class="form-control" placeholder="e.g. Arrays, Photosynthesis, Chapter 2 (retrieves relevant study notes)" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0; flex:1; min-width:120px;">
+          <label class="form-label" for="num_questions">Questions</label>
+          <input type="number" id="num_questions" name="num_questions" class="form-control" value="10" min="3" max="25" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-generate-start" style="height: 42px;">✨ Generate Offline Quiz</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Quiz grid -->
+  {% if quizzes %}
+  <div class="quiz-grid">
+    {% for quiz in quizzes %}
+    <div class="quiz-card">
+      <div class="quiz-card-header">
+        <h3>{{ quiz.title }}</h3>
+        {% if quiz.id in attempted_ids %}
+          <span class="quiz-card-badge badge-attempted">✅ Done</span>
+        {% else %}
+          <span class="quiz-card-badge badge-new">🆕 New</span>
+        {% endif %}
+      </div>
+
+      <p>{{ quiz.description.split('---DIAGNOSTICS---')[0] }}</p>
+
+      <div class="quiz-meta">
+        <div class="quiz-meta-item">
+          <span class="icon">❓</span>
+          <span>{{ quiz.question_count() }} questions</span>
+        </div>
+        {% if quiz.time_limit > 0 %}
+        <div class="quiz-meta-item">
+          <span class="icon">⏱️</span>
+          <span>{{ (quiz.time_limit // 60) }} min</span>
+        </div>
+        {% else %}
+        <div class="quiz-meta-item">
+          <span class="icon">∞</span>
+          <span>No time limit</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <a href="{{ url_for('quiz', quiz_id=quiz.id) }}" class="btn btn-primary btn-sm" id="start-quiz-{{ quiz.id }}">
+        {% if quiz.id in attempted_ids %}🔄 Retake Quiz{% else %}▶️ Start Quiz{% endif %}
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>No quizzes available yet</h3>
+    <p>Check back soon — quizzes are being added!</p>
+    {% if session.is_admin %}
+    <a href="{{ url_for('create_quiz') }}" class="btn btn-primary mt-3">+ Create First Quiz</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form submit loader
+    const form = document.querySelector('.quiz-generator-form');
+    const submitBtn = document.getElementById('btn-generate-start');
+    if (form && submitBtn) {
+        form.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Generating Quiz...';
+        });
+    }
+
+    // Check Ollama status immediately
+    checkOllamaStatus();
+
+    function checkOllamaStatus() {
+        const dot = document.getElementById('ollama-dot');
+        const statusText = document.getElementById('ollama-status-text');
+        const help = document.getElementById('ollama-help');
+        const badge = document.getElementById('detected-model-badge');
+
+        fetch('/api/ollama/status')
+            .then(res => res.json())
+            .then(data => {
+                if (data.running) {
+                    dot.className = 'status-dot online';
+                    statusText.textContent = 'Ollama is online and connected.';
+                    help.style.display = 'none';
+                    
+                    if (data.models && data.models.length > 0) {
+                        const genModels = data.models.filter(m => !m.toLowerCase().includes('embed'));
+                        if (genModels.length > 0) {
+                            let selectedModel = null;
+                            for (let p of ['llama3.2', 'mistral', 'phi3', 'llama2']) {
+                                for (let m of genModels) {
+                                    if (m.toLowerCase().includes(p)) {
+                                        selectedModel = m;
+                                        break;
+                                    }
+                                }
+                                if (selectedModel) break;
+                            }
+                            if (!selectedModel) selectedModel = genModels[0];
+                            
+                            badge.textContent = `Active Model: ${selectedModel}`;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            statusText.textContent = 'Ollama is active, but no generation models are installed.';
+                            help.style.display = 'block';
+                            badge.style.display = 'none';
+                        }
+                    } else {
+                        statusText.textContent = 'Ollama is active, but no models are installed.';
+                        help.style.display = 'block';
+                        badge.style.display = 'none';
+                    }
+                } else {
+                    dot.className = 'status-dot offline';
+                    statusText.textContent = 'Ollama is offline or unreachable.';
+                    help.style.display = 'block';
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                dot.className = 'status-dot offline';
+                statusText.textContent = 'Ollama is offline or unreachable.';
+                help.style.display = 'block';
+                badge.style.display = 'none';
+            });
+    }
+});
+</script>
+{% endblock %}
